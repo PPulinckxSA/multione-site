@@ -1,0 +1,13 @@
+name = "multione-site"
+pages_build_output_dir = "./public"
+compatibility_date = "2026-09-01"
+
+# Meme base que l'application, mais ce serveur ne lit que des donnees publiques (jamais prix, stock, clients, offres)
+[[d1_databases]]
+binding = "DB"
+database_name = "multione-db"
+database_id = "5ce7e627-8d2c-49f6-a87c-8d0a3eea1588"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "multione-files"
