@@ -31,7 +31,7 @@ button,input,select,textarea{font:inherit}
 :focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
 .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
 h1,h2,h3{font-family:var(--cond);font-weight:700;letter-spacing:.2px;line-height:1.02;margin:0}
-h1{font-size:clamp(44px,7vw,92px)}h2{font-size:clamp(32px,4vw,48px)}h3{font-size:26px}
+h1{font-size:clamp(44px,7vw,92px)}h2,h1.h2{font-size:clamp(32px,4vw,48px)}h3{font-size:26px}
 p{max-width:68ch}
 
 /* barre du haut */
@@ -184,6 +184,7 @@ details{border-top:1px solid var(--steel2);padding:14px 0}details summary{cursor
 .ckb .ckno{background:#fff;color:var(--night)}.ckb .ckyes{background:var(--night);color:#fff}
 footer{background:var(--night);color:#aebfd8;padding:40px 0 calc(40px + env(safe-area-inset-bottom));font-size:15px}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}footer a{color:#dbe5f2}
+.fimp{flex-basis:100%;font-size:14px;border-top:1px solid rgba(255,255,255,.12);padding-top:16px}.fimp:empty{display:none}
 .loading{padding:80px 0;text-align:center;color:var(--muted)}
 
 @media (max-width:1180px){.top .cta.small{display:none}}
@@ -207,9 +208,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   <button class="menu-t" id="menuT" aria-label="Menu">☰</button>
 </div></header>
 <main id="view"><div class="loading">…</div></main>
-<footer><div class="wrap"><div><b style="color:#fff">MultiOne Belgium Import</b><br><span id="ftxt"></span></div> <div><a href="#" id="fck"></a> · <a href="https://app.multione.be" id="facc" rel="nofollow"></a> · <a href="#/devenir-distributeur" id="fjoin"></a> · <a href="#/contact">Contact</a> · <a href="#/vie-privee" id="fpriv"></a></div></div></footer>
-<script src="/story.js?v=202610021504"></script>
-<script src="/partner.js?v=202610021504"></script>
-<script src="/site.js?v=202610021504"></script>
+<footer><div class="wrap"><div><b style="color:#fff">MultiOne Belgium Import</b><br><span id="ftxt"></span></div> <div><a href="#" id="fck"></a> · <a href="https://app.multione.be" id="facc" rel="nofollow"></a> · <a href="#/devenir-distributeur" id="fjoin"></a> · <a href="#/contact">Contact</a> · <a href="#/vie-privee" id="fpriv"></a></div><div id="fimp" class="fimp"></div></div></footer>
+<script src="/routes.js?v=202610101049"></script>
+<script src="/story.js?v=202610101049"></script>
+<script src="/partner.js?v=202610101049"></script>
+<script src="/site.js?v=202610101049"></script>
 </body>
 </html>

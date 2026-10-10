@@ -1,0 +1,6 @@
+# multione.be
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://multione.be/sitemap.xml
