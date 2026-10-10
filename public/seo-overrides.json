@@ -1,0 +1,4 @@
+{
+  "_aide": "Titres et descriptions personnalisés. Clé = adresse de la page (ex. /fr/mini-chargeuses/serie-2). Sans entrée ici, le titre et la description sont générés automatiquement. Title : 50-60 caractères conseillés ; description : 140-160 caractères.",
+  "_exemple": { "/fr/mini-chargeuses/serie-2": { "title": "MultiOne Série 2 – mini-chargeuse compacte pour particuliers et paysagistes", "description": "…" } }
+}

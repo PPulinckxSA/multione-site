@@ -2,6 +2,8 @@
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let L = (localStorage.getItem('mo_lang') || (navigator.language || 'fr').slice(0, 2)); if (!['fr', 'nl', 'en'].includes(L)) L = 'fr';
+{ const pl = location.pathname.split('/')[1]; if (['fr', 'nl', 'en'].includes(pl)) L = pl; }   // la langue de l'adresse prime
+let CUR = { page: 'home' };                        // page affichee
 let D = null;                                     // donnees
 const CFG = JSON.parse(sessionStorage.getItem('mo_cfg') || '{"machine":null,"items":[],"partner":null}');
 const saveCfg = () => sessionStorage.setItem('mo_cfg', JSON.stringify(CFG));
@@ -62,9 +64,10 @@ const t = () => T[L];
 
 // ---------- donnees ----------
 async function load() {
-  const [cat, pt, c, m, i, ev] = await Promise.all(['/api/public/catalog', '/api/public/partners', '/assets/annex/catalog.json', '/assets/annex/machines.json', '/assets/annex/items.json', '/api/public/events']
+  const [cat, pt, c, m, i, ev, ov] = await Promise.all(['/api/public/catalog', '/api/public/partners', '/assets/annex/catalog.json', '/assets/annex/machines.json', '/assets/annex/items.json', '/api/public/events', '/seo-overrides.json']
     .map(u => fetch(u).then(r => r.json()).catch(() => ({ events: [] }))));
-  D = { ...cat, partners: pt.partners, events: ev.events || [], cat: c, mach: m, items: i, by: Object.fromEntries(cat.products.map(p => [p.code, p])) };
+  D = { ...cat, partners: pt.partners, events: ev.events || [], cat: c, mach: m, items: i, ov: ov || {}, by: Object.fromEntries(cat.products.map(p => [p.code, p])) };
+  D.I = MOR.index({ products: cat.products, cat: c, mach: m });
 }
 const desc = p => p?.['desc_' + L] || p?.desc_fr || p?.desc_en || '';
 const serKey = s => { const m = String(s).match(/^(\d+)/); return m ? [0, +m[1]] : [1, String(s).replace(/\D/g, '') | 0]; };
@@ -113,16 +116,36 @@ function cookieBanner(force) {
 }
 let lastTracked = null;
 function trackPage(force) {                       // le site change de page sans recharger : chaque page est signalee a GA4
-  const path = (location.hash || '#/').replace(/^#/, '') || '/';
+  const path = location.pathname;
   if (!window.gtag || consent() !== 'granted' || (!force && path === lastTracked)) return; lastTracked = path; loadGA();
-  gtag('event', 'page_view', { page_title: document.title, page_location: location.origin + '/' + (location.hash || '#/'), page_path: path, language: L });
+  gtag('event', 'page_view', { page_title: document.title, page_location: location.origin + path, page_path: path, language: L });
+}
+
+// ---------- adresses ----------
+function LH(h) { const g = MOR.fromLegacy(h); return D ? MOR.href(L, g.page, g.arg, D.I) : '/' + L + '/'; }   // « #/machine/C951029 » -> adresse traduite
+function fixLinks() { if (!D) return; document.querySelectorAll('a[href^="#/"]').forEach(a => a.setAttribute('href', LH(a.getAttribute('href')))); }
+function go(path) { if (path !== location.pathname + location.search) history.pushState(null, '', path); route(); }
+function setMeta(r) {
+  const m = MOR.meta(r.L || L, r.page, r.arg, D.I, { overrides: D.ov });
+  document.title = m.title;
+  const set = (sel, attr, val, make) => { let e = document.head.querySelector(sel); if (!e && val) { e = document.createElement(make[0]); for (const [k, v] of Object.entries(make[1])) e.setAttribute(k, v); document.head.appendChild(e); } if (e) val ? e.setAttribute(attr, val) : e.remove(); };
+  set('meta[name="description"]', 'content', m.description, ['meta', { name: 'description' }]);
+  set('link[rel="canonical"]', 'href', m.canonical, ['link', { rel: 'canonical' }]);
+  set('meta[name="robots"]', 'content', m.noindex ? 'noindex, follow' : '', ['meta', { name: 'robots' }]);
+  for (const l of MOR.LANGS) set(`link[rel="alternate"][hreflang="${MOR.HREFLANG[l]}"]`, 'href', m.alternates ? MOR.ORIGIN + m.alternates[l] : '', ['link', { rel: 'alternate', hreflang: MOR.HREFLANG[l] }]);
+}
+function footerImporters() {
+  const e = $('#fimp'); if (!e || !D) return;
+  const int = (D.partners || []).filter(c => c.kind === 'internal');
+  const lbl = { fr: 'Importateurs officiels MultiOne en Belgique', nl: 'Officiële MultiOne-invoerders in België', en: 'Official MultiOne importers in Belgium' }[L];
+  e.innerHTML = int.length ? `${lbl} : ${int.map(c => c.website ? `<a href="${esc(c.website)}" rel="noopener">${esc(c.name)}</a>` : esc(c.name)).join(' · ')}` : '';
 }
 
 // ---------- coque ----------
 function shell() {
   document.documentElement.lang = L;
-  const h = location.hash || '#/';
-  $('#nav').innerHTML = t().nav.map(([href, l]) => `<a href="${href}" class="${(href === '#/' ? h === '#/' : h.startsWith(href)) ? 'on' : ''}">${l}</a>`).join('')
+  const h = location.pathname;
+  $('#nav').innerHTML = t().nav.map(([lh, l]) => { const href = LH(lh); return `<a href="${href}" class="${(lh === '#/' ? h === href : h.startsWith(href)) ? 'on' : ''}">${l}</a>`; }).join('')
 ;
   $('#accL').textContent = t().acc + ' ▾';
   const PM = { fr: [['Portail commercial', 'Offres de prix, tarif, catalogue'], ['Portail SAV', 'Mises en service, livres de pièces, pièces, garanties']],
@@ -133,17 +156,23 @@ function shell() {
   document.onclick = () => $('#accM')?.classList.remove('open');
   const fa = $('#facc'); if (fa) fa.textContent = t().acc.replace('🔒 ', '');
   $('#lang').innerHTML = ['fr', 'nl', 'en'].map(l => `<button data-l="${l}" class="${l === L ? 'on' : ''}">${l.toUpperCase()}</button>`).join('');
-  document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { L = b.dataset.l; localStorage.setItem('mo_lang', L); route(); });
+  document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { L = b.dataset.l; localStorage.setItem('mo_lang', L); go(MOR.href(L, CUR.page === 'notfound' ? 'home' : CUR.page, CUR.arg, D?.I)); });
   $('#topCta').textContent = t().cta; $('#ftxt').textContent = t().foot; $('#fpriv').textContent = t().privacy;
   const fj = $('#fjoin'); if (fj) fj.textContent = pt().nav;
   const fck = $('#fck'); if (fck) { fck.textContent = (CKT[L] || CKT.fr).link; fck.onclick = e => { e.preventDefault(); cookieBanner(true); }; }
   $('#menuT').onclick = () => $('#nav').classList.toggle('open');
+  footerImporters(); fixLinks();
 }
 function route() {
+  if (D && location.hash.startsWith('#/')) { const g = MOR.fromLegacy(location.hash); history.replaceState(null, '', MOR.href(L, g.page, g.arg, D.I)); }   // anciennes adresses avec #
+  { const pl = location.pathname.split('/')[1]; if (['fr', 'nl', 'en'].includes(pl) && pl !== L) { L = pl; try { localStorage.setItem('mo_lang', L); } catch (e) {} } }
   shell(); setTimeout(trackPage, 50); if (document.getElementById('ckb')) cookieBanner(true); $('#nav').classList.remove('open'); window.scrollTo(0, 0);
-  const [, a, b] = (location.hash || '#/').slice(1).split('/').map(decodeURIComponent);
   const v = $('#view');
   if (!D) { v.innerHTML = '<div class="loading">…</div>'; return; }
+  const r = MOR.resolve(location.pathname, D.I) || { L, page: 'notfound' };
+  CUR = r; setMeta(r);
+  const a = { home: undefined, acc: 'accessoires' }[r.page] ?? r.page, b = r.arg || undefined;
+  if (a === 'notfound') return v.innerHTML = `<section><div class="wrap"><h1 class="h2">${esc(MOR.TX[L].notfound[0].split(' – ')[0])}</h1><p style="margin-top:14px">${esc(MOR.TX[L].notfound[1])}</p><p><a class="cta" href="${MOR.href(L, 'home')}">${esc(MOR.TX[L].home_l)}</a></p></div></section>`;
   if (a === 'machines') return v.innerHTML = pageMachines(), wire();
   if (a === 'serie') return v.innerHTML = pageSerie(b), wire();
   if (a === 'machine') return v.innerHTML = pageMachine(b), wire();
@@ -158,20 +187,20 @@ function route() {
   if (a === 'vie-privee') { const ck = { fr: ['Cookies', 'Avec votre accord, ce site utilise Google Analytics (Google Ireland Ltd) pour mesurer son audience de façon statistique : pages consultées, langue, type d’appareil. Sans votre accord, aucun cookie de mesure n’est déposé. Le choix « Accepter » ou « Refuser » est retenu dans votre navigateur ; vous pouvez le modifier à tout moment.', 'Modifier mon choix'],
       nl: ['Cookies', 'Met uw toestemming gebruikt deze site Google Analytics (Google Ireland Ltd) om het bezoek statistisch te meten: bekeken pagina’s, taal, type toestel. Zonder uw toestemming worden geen meetcookies geplaatst. Uw keuze wordt in uw browser bewaard; u kunt ze op elk moment wijzigen.', 'Mijn keuze wijzigen'],
       en: ['Cookies', 'With your consent, this website uses Google Analytics (Google Ireland Ltd) to measure its audience statistically: pages viewed, language, device type. Without your consent, no measurement cookie is set. Your choice is stored in your browser and can be changed at any time.', 'Change my choice'] }[L];
-    v.innerHTML = `<section><div class="wrap"><h2>${t().privT}</h2><p style="margin-top:16px">${t().privP}</p><h3 style="margin-top:24px">${ck[0]}</h3><p>${ck[1]}</p><button class="btn2" id="ckChange">${ck[2]}</button></div></section>`;
+    v.innerHTML = `<section><div class="wrap"><h1 class="h2">${t().privT}</h1><p style="margin-top:16px">${t().privP}</p><h3 style="margin-top:24px">${ck[0]}</h3><p>${ck[1]}</p><button class="btn2" id="ckChange">${ck[2]}</button></div></section>`;
     $('#ckChange').onclick = () => cookieBanner(true); return; }
   v.innerHTML = pageHome(); wire();
 }
 function wire() {
   document.querySelectorAll('[data-evsubj]').forEach(a => a.onclick = () => sessionStorage.setItem('mo_ct_subject', a.dataset.evsubj));
-  document.querySelectorAll('[data-addm]').forEach(b => b.onclick = () => { CFG.machine = b.dataset.addm; CFG.items = CFG.items.filter(c => D.by[c]?.family !== 'option'); saveCfg(); location.hash = '#/configurer/2'; });
+  document.querySelectorAll('[data-addm]').forEach(b => b.onclick = () => { CFG.machine = b.dataset.addm; CFG.items = CFG.items.filter(c => D.by[c]?.family !== 'option'); saveCfg(); go(LH('#/configurer/2')); });
   document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const c = b.dataset.add; CFG.items = CFG.items.includes(c) ? CFG.items.filter(x => x !== c) : [...CFG.items, c]; saveCfg(); route(); });
 }
 
 // ---------- pages ----------
 function serieCard(s) {
   const ms = machines().filter(p => p.series_tab === s);
-  return `<a class="ser" href="#/serie/${encodeURIComponent(s)}"><span class="num">${esc(serNum(s))}</span><img src="${mImg(ms[0].code)}" alt="" loading="lazy">
+  return `<a class="ser" href="#/serie/${encodeURIComponent(s)}"><span class="num">${esc(serNum(s))}</span><img src="${mImg(ms[0].code)}" alt="MultiOne ${esc(SER(s))}" loading="lazy">
     <b>${esc(SER(s))}</b><small>${ms.map(p => esc(shortMachine(p.desc_en).main)).join(' · ')}</small></a>`;
 }
 function pageHome() {
@@ -184,7 +213,7 @@ function pageHome() {
   ${eventBanner()}
   <section><div class="wrap"><div class="sechead"><div><h2>${t().machines}</h2><p>${t().machinesP}</p></div></div><div class="series">${seriesList().map(serieCard).join('')}</div></div></section>
   <section style="padding-top:0"><div class="wrap"><div class="sechead"><div><h2>${t().apps}</h2><p>${t().appsP}</p></div><a class="btn2" href="#/accessoires">${t().allAcc}</a></div>
-    <div class="apps">${cats.map(c => `<a class="app" href="#/accessoires/${c.id}"><img src="/assets/annex/${c.photo}" alt="" loading="lazy"><span>${esc(catName(c))}<small>${t().famAcc(c.n)}</small></span></a>`).join('')}</div></div></section>
+    <div class="apps">${cats.map(c => `<a class="app" href="#/accessoires/${c.id}"><img src="/assets/annex/${c.photo}" alt="${esc(catName(c))}" loading="lazy"><span>${esc(catName(c))}<small>${t().famAcc(c.n)}</small></span></a>`).join('')}</div></div></section>
   <section class="band"><div class="wrap"><div class="sechead"><div><h2>${t().partners}</h2><p>${t().partnersP}</p></div><a class="btn2" href="#/devenir-distributeur">${pt().nav}</a></div>${partnerCards(false)}</div></section>
   <section style="padding-top:48px">${partnerBand().replace('<section style="padding-top:0">', '').replace(/<\/section>$/, '')}</section>`;
 }
@@ -199,12 +228,12 @@ function eventBanner() {
       ${(e['text_' + L] || e.text_fr) ? `<p>${esc(e['text_' + L] || e.text_fr)}</p>` : ''}
       <p class="evb">${e.url ? `<a class="btn2" href="${esc(e.url)}" target="_blank" rel="noopener">${t().evMore}</a>` : ''}<a class="cta small" href="#/contact" data-evsubj="${esc(e['title_' + L] || e.title_fr)}">${t().evAsk}</a></p></div></div>`; }).join('')}</div></section>`;
 }
-function pageMachines() { return `<section><div class="wrap"><h2 style="margin-bottom:24px">${t().machines}</h2><div class="series">${seriesList().map(serieCard).join('')}</div></div></section>`; }
+function pageMachines() { return `<section><div class="wrap"><h1 class="h2" style="margin-bottom:24px">${t().machines}</h1><div class="series">${seriesList().map(serieCard).join('')}</div></div></section>`; }
 function pageSerie(s) {
   const ms = machines().filter(p => p.series_tab === s);
-  return `<section style="padding-top:0"><div class="wrap"><div class="crumb"><a href="#/machines">${t().machines}</a> › ${esc(SER(s))}</div><h2 style="margin-bottom:22px">${esc(SER(s))}</h2>
+  return `<section style="padding-top:0"><div class="wrap"><div class="crumb"><a href="#/machines">${t().machines}</a> › ${esc(SER(s))}</div><h1 class="h2" style="margin-bottom:22px">${esc(SER(s))}</h1>
     <div class="grid3">${ms.map(p => { const sm = shortMachine(p.desc_en), sp = D.mach[p.code]?.specs || [], g = k => sp.find(x => x.key === k)?.value[L] || '';
-      return `<a class="card" href="#/machine/${p.code}"><img src="${mImg(p.code)}" alt="" style="object-fit:contain;background:var(--steel)"><div><b>MultiOne ${esc(sm.main)}</b><small>${esc(sm.sub)}</small>
+      return `<a class="card" href="#/machine/${p.code}"><img src="${mImg(p.code)}" alt="MultiOne ${esc(sm.main)}" style="object-fit:contain;background:var(--steel)"><div><b>MultiOne ${esc(sm.main)}</b><small>${esc(sm.sub)}</small>
         <div class="chips">${[g('tipping'), g('height'), g('weight')].filter(Boolean).map(v => `<span>${esc(v)}</span>`).join('')}</div></div></a>`; }).join('')}</div></div></section>`;
 }
 function pageMachine(code) {
@@ -218,8 +247,8 @@ function pageMachine(code) {
         ${inC ? `<a class="cta" href="#/configurer/2">${t().inCfg}</a>` : `<button class="cta" data-addm="${code}">${t().addMachine}</button>`}
         <table class="spec">${(a.specs || []).map(s => `<tr><td>${esc(s.label[L] || s.label.fr)}</td><td>${esc(s.value[L] || s.value.fr)}</td></tr>`).join('')}</table></div></div>
     ${(a.features?.[L] || []).length ? `<details open><summary>${t().std}</summary><ul class="feat">${a.features[L].map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}
-    ${a.dims ? `<details><summary>${t().dims}</summary><img src="/assets/annex/${a.dims}" alt="" style="max-width:820px;margin-top:10px"></details>` : ''}
-    ${a.chart ? `<details><summary>${t().chart}</summary><img src="/assets/annex/${a.chart}" alt="" style="max-width:900px;margin-top:10px"></details>` : ''}
+    ${a.dims ? `<details><summary>${t().dims}</summary><img src="/assets/annex/${a.dims}" alt="${esc(t().dims)}" loading="lazy" style="max-width:820px;margin-top:10px"></details>` : ''}
+    ${a.chart ? `<details><summary>${t().chart}</summary><img src="/assets/annex/${a.chart}" alt="${esc(t().chart)}" loading="lazy" style="max-width:900px;margin-top:10px"></details>` : ''}
     <h2 style="margin:36px 0 16px">${t().opts}</h2><div class="optlist">${opts.map(o => optCard(o)).join('') || `<p>${t().noOpts}</p>`}</div>
     <h2 style="margin:40px 0 16px">${t().compatAcc}</h2>
     ${D.cat.categories.map(c => { const g = fams.filter(x => x.f.cat === c.id); return g.length ? `<h3 style="margin:22px 0 10px">${esc(catName(c))}</h3><div class="grid3">${g.map(({ f, l }) => famCard(f, l)).join('')}</div>` : ''; }).join('')}
@@ -231,14 +260,14 @@ function optCard(o, sel) {
     ${txt ? `<small>${esc(txt.length > 110 ? txt.slice(0, 108) + '…' : txt)}</small>` : ''}<small style="color:var(--blue);font-weight:600;margin-top:3px">${on ? t().added : t().add}</small></span></button>`;
 }
 function famCard(f, l) {
-  return `<a class="card" href="#/famille/${f.id}"><img src="${famImg(f)}" alt="" loading="lazy"><div><b>${esc(famName(f))}</b><small>${t().models(f.codes.length)}</small><br>${lvl(l)}</div></a>`;
+  return `<a class="card" href="#/famille/${f.id}"><img src="${famImg(f)}" alt="${esc(famName(f))}" loading="lazy"><div><b>${esc(famName(f))}</b><small>${t().models(f.codes.length)}</small><br>${lvl(l)}</div></a>`;
 }
 function pageAcc(catId) {
   const cats = D.cat.categories.map(c => ({ ...c, fams: famsVisible().filter(f => f.cat === c.id) })).filter(c => c.fams.length);
   const m = CFG.machine;
   const show = catId ? cats.filter(c => c.id === catId) : cats;
   return `<section style="padding-top:0"><div class="wrap"><div class="crumb"><a href="#/accessoires">${t().allAcc}</a>${catId ? ' › ' + esc(catName(cats.find(c => c.id === catId) || {})) : ''}</div>
-    <h2 style="margin-bottom:16px">${catId ? esc(catName(cats.find(c => c.id === catId) || {})) : t().allAcc}</h2>
+    <h1 class="h2" style="margin-bottom:16px">${catId ? esc(catName(cats.find(c => c.id === catId) || {})) : t().allAcc}</h1>
     <div class="tabs">${[`<a class="btn2" style="padding:5px 12px;border-width:1px" href="#/accessoires">${t().all}</a>`, ...cats.map(c => `<a class="btn2" style="padding:5px 12px;border-width:1px;${c.id === catId ? 'background:var(--night);color:#fff;border-color:var(--night)' : ''}" href="#/accessoires/${c.id}">${esc(catName(c))}</a>`)].join('')}</div>
     ${show.map(c => { const g = c.fams.map(f => ({ f, l: famLevel(f, m) })).filter(x => !m || x.l !== 'no'); return g.length ? `<h3 style="margin:24px 0 10px">${esc(catName(c))}</h3><div class="grid3">${g.map(({ f, l }) => famCard(f, l)).join('')}</div>` : ''; }).join('')}
   </div></section>`;
@@ -247,7 +276,7 @@ function pageFamily(id) {
   const f = famsVisible().find(x => x.id === id); if (!f) return pageAcc();
   const c = D.cat.categories.find(x => x.id === f.cat), m = CFG.machine, feats = f.features?.[L] || [];
   return `<section style="padding-top:0"><div class="wrap"><div class="crumb"><a href="#/accessoires">${t().allAcc}</a> › <a href="#/accessoires/${c.id}">${esc(catName(c))}</a> › ${esc(famName(f))}</div>
-    <div class="mtop"><div class="big" style="padding:0;overflow:hidden"><img src="${famImg(f)}" alt="" style="max-height:440px;object-fit:cover"></div>
+    <div class="mtop"><div class="big" style="padding:0;overflow:hidden"><img src="${famImg(f)}" alt="MultiOne ${esc(famName(f))}" style="max-height:440px;object-fit:cover"></div>
       <div><h1 style="font-size:clamp(38px,5vw,60px)">${esc(famName(f))}</h1>${feats.length ? `<ul style="padding-left:20px;margin-top:16px">${feats.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div></div>
     <div class="models">${f.codes.map(code => { const p = D.by[code], l = m ? level(code, m) : undefined, on = CFG.items.includes(code), tech = D.items[code]?.tech || [];
       return `<div class="mrow" style="${l === 'no' ? 'opacity:.45' : ''}"><div><b>${esc(desc(p))}</b>${tech.length ? `<div class="chips">${tech.map(x => `<span>${esc(x.label[L] || x.label.fr)} ${esc(x.value)}</span>`).join('')}</div>` : ''}
@@ -262,12 +291,12 @@ function partnerCards(selectable, cp) {
   if (cp) P.sort((a, b) => covers(b.postcodes, cp) - covers(a.postcodes, cp));
   const Tag = selectable ? 'button' : 'div';
   return `<div class="partners">${P.map(p => `<${Tag} class="pt ${selectable && CFG.partner === p.id ? 'on' : ''}" ${selectable ? `data-pt="${p.id}" type="button"` : ''}>
-    <div class="lg">${p.has_logo ? `<img src="/api/public/logo/${p.id}" alt="">` : ''}</div><b>${esc(p.name)}</b>
+    <div class="lg">${p.has_logo ? `<img src="/api/public/logo/${p.id}" alt="${esc(p.name)}">` : ''}</div><b>${esc(p.name)}</b>
     <span class="off">${p.kind === 'internal' ? t().importer : t().official}${cp && covers(p.postcodes, cp) ? ' · ' + t().near : ''}</span>
     ${p.region ? `<small>${esc(p.region)}</small>` : ''}<small>${esc([p.street, p.city].filter(Boolean).join(', '))}</small>${p.phone ? `<small>${t().phoneL} ${esc(p.phone)}</small>` : ''}
     ${p.description ? `<small>${esc(p.description)}</small>` : ''}</${Tag}>`).join('')}</div>`;
 }
-function pagePartners() { return `<section><div class="wrap"><h2>${t().partners}</h2><p style="margin:8px 0 24px">${t().partnersP}</p>${partnerCards(false)}</div></section>${partnerBand()}`; }
+function pagePartners() { return `<section><div class="wrap"><h1 class="h2">${t().partners}</h1><p style="margin:8px 0 24px">${t().partnersP}</p>${partnerCards(false)}</div></section>${partnerBand()}`; }
 
 // ---------- configurateur ----------
 let SERSEL = null;
@@ -311,9 +340,9 @@ function pageConfig(step) {
     <div class="navbtns">${st > 1 ? `<button class="btn2" data-go="${st - 1}">‹ ${t().prev}</button>` : '<span></span>'}
       ${st < 5 ? `<button class="cta" data-go="${st + 1}" ${st === 1 && !CFG.machine ? 'disabled style="opacity:.5"' : ''}>${t().next}</button>` : `<button class="cta" id="sendB">${t().send}</button>`}</div></div>${summary()}</div></div></section>`;
   const T0 = Date.now();
-  document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { location.hash = '#/configurer/' + b.dataset.st; });
+  document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { go(LH('#/configurer/' + b.dataset.st)); });
   document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
-    const n = +b.dataset.go; if (n === 5 && !CFG.partner) { alert(t().choosePartner); return; } location.hash = '#/configurer/' + n; });
+    const n = +b.dataset.go; if (n === 5 && !CFG.partner) { alert(t().choosePartner); return; } go(LH('#/configurer/' + n)); });
   document.querySelectorAll('[data-ser]').forEach(b => b.onclick = () => { SERSEL = b.dataset.ser; pageConfig(1); });
   document.querySelectorAll('[data-mc]').forEach(b => b.onclick = () => { if (CFG.machine !== b.dataset.mc) CFG.items = CFG.items.filter(c => D.by[c]?.family !== 'option'); CFG.machine = b.dataset.mc; saveCfg(); pageConfig(1); });
   document.querySelectorAll('.opt[data-add]').forEach(b => b.onclick = () => { const c = b.dataset.add; CFG.items = CFG.items.includes(c) ? CFG.items.filter(x => x !== c) : [...CFG.items, c]; saveCfg(); pageConfig(st); });
@@ -333,7 +362,7 @@ function pageConfig(step) {
     sb.disabled = true; sb.textContent = t().sending;
     try { const r = await fetch('/api/public/lead', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Erreur');
-      sessionStorage.setItem('mo_last_partner', d.partner); sessionStorage.setItem('mo_last_via', d.via || ''); CFG.machine = null; CFG.items = []; saveCfg(); location.hash = '#/merci';
+      sessionStorage.setItem('mo_last_partner', d.partner); sessionStorage.setItem('mo_last_via', d.via || ''); CFG.machine = null; CFG.items = []; saveCfg(); go(LH('#/merci'));
     } catch (x) { e.textContent = x.message; sb.disabled = false; sb.textContent = t().send; }
   };
 }
@@ -351,5 +380,15 @@ function pageThanks() {
 }
 
 window.addEventListener('hashchange', route);
+window.addEventListener('popstate', route);
+// liens internes : changement de page sans rechargement
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a || e.defaultPrevented || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || a.target === '_blank') return;
+  let h = a.getAttribute('href'); if (h.startsWith('#/')) h = LH(h);
+  if (!h.startsWith('/') || h.startsWith('//') || /^\/(api|assets)\//.test(h) || /\.[a-z0-9]{2,5}$/i.test(h)) return;
+  e.preventDefault(); go(h);
+});
+// les liens ecrits « #/… » dans les pages deviennent de vraies adresses (lisibles par Google)
+new MutationObserver(() => fixLinks()).observe(document.body, { childList: true, subtree: true });
 shell();
 load().then(() => { route(); cookieBanner(); }).catch(e => { $('#view').innerHTML = `<div class="loading">${esc(e.message)}</div>`; });

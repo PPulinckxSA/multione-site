@@ -28,9 +28,10 @@ async function catalog(env) {
 }
 
 async function partners(env) {
-  return (await env.DB.prepare(`SELECT id, kind, IFNULL(public_name, name) AS name, public_region AS region, public_postcodes AS postcodes,
-      IFNULL(public_phone, phone) AS phone, street, city, public_description AS description, logo_key IS NOT NULL AS has_logo
-      FROM companies WHERE public_visible = 1 ORDER BY CASE kind WHEN 'internal' THEN 0 ELSE 1 END, name`).all()).results;
+  const q = (extra) => env.DB.prepare(`SELECT id, kind, IFNULL(public_name, name) AS name, public_region AS region, public_postcodes AS postcodes,
+      IFNULL(public_phone, phone) AS phone, street, city, public_description AS description, logo_key IS NOT NULL AS has_logo${extra}
+      FROM companies WHERE public_visible = 1 ORDER BY CASE kind WHEN 'internal' THEN 0 ELSE 1 END, name`).all();
+  try { return (await q(', public_website AS website')).results; } catch (e) { return (await q('')).results; }   // colonne ajoutee par la migration 0041
 }
 
 async function notify(env, lead, company, items, machine) {
