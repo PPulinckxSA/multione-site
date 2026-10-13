@@ -21,9 +21,11 @@ async function loadData(env, origin) {
   let events = [];
   try { events = (await env.DB.prepare(`SELECT id, title_fr, title_nl, title_en, text_fr, text_nl, text_en, location, url, start_date, end_date, image_key IS NOT NULL AS has_image
       FROM events WHERE show_from <= date('now') AND end_date >= date('now') ORDER BY start_date`).all()).results; } catch (e) {}
+  let faq = [];
+  try { faq = (await env.DB.prepare(`SELECT id, topic, q_fr, q_nl, q_en, a_fr, a_nl, a_en FROM faq WHERE published = 1 ORDER BY topic_order, sort_order, created_at`).all()).results; } catch (e) {}
   const data = { products, cat: cat || { categories: [], families: [] }, mach: mach || {} };
   const ov = {}; for (const [k, v] of Object.entries(overrides || {})) if (k.startsWith('/')) ov[k] = v;      // les cles « _aide » etc. sont ignorees
-  CACHE = { I: MOR.index(data), companies, events, overrides: ov }; CACHE_AT = Date.now();
+  CACHE = { I: MOR.index(data), companies, events, faq, overrides: ov }; CACHE_AT = Date.now();
   return CACHE;
 }
 
@@ -41,6 +43,7 @@ function ssrBody(m, I, D) {
   if (page === 'acc') body = (arg ? [I.cat[arg]] : I.cats).map(c => `<h2><a href="${esc(H('acc', c.id))}">${esc(c[L] || c.fr)}</a></h2><ul>${I.fams.filter(f => f.cat === c.id).map(f => li(H('famille', f.id), f[L] || f.fr)).join('')}</ul>`).join('');
   if (page === 'famille') { const f = I.fam[arg], ft = f.features?.[L] || f.features?.en || [];
     body = `${m.image ? `<img src="${esc(m.image)}" alt="${esc(f[L] || f.fr)}" width="600">` : ''}<ul>${ft.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`; }
+  if (page === 'faq') body = Object.keys(MOR.FAQ_TOPICS).map(t => { const qs = D.faq.filter(f => f.topic === t); return qs.length ? `<h2>${esc(MOR.FAQ_TOPICS[t][L])}</h2>${qs.map(f => `<h3>${esc(MOR.faqText(f, 'q', L))}</h3><p>${esc(MOR.faqText(f, 'a', L)).replace(/\n/g, '<br>')}</p>`).join('')}` : ''; }).join('');
   if (page === 'partenaires' || page === 'contact') body = `<ul>${D.companies.map(c => `<li><b>${esc(c.name)}</b> – ${esc([c.street, c.city].filter(Boolean).join(', '))}${c.phone ? ' – ' + esc(c.phone) : ''}${c.website ? ` – <a href="${esc(c.website)}">${esc(c.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : ''}</li>`).join('')}</ul>`;
   return `<section><div class="wrap">${crumbs}<h1>${esc(m.h1)}</h1><p>${esc(m.description)}</p>${body}</div></section>`;
 }
@@ -67,7 +70,7 @@ function importers(D, L) {
 
 async function renderPage(ctx, url, r) {
   const { env } = ctx, D = await loadData(env, url.origin);
-  const m = MOR.meta(r.L, r.page, r.arg, D.I, { overrides: D.overrides, companies: D.companies.filter(c => c.kind === 'internal'), partners: D.companies, events: D.events });
+  const m = MOR.meta(r.L, r.page, r.arg, D.I, { overrides: D.overrides, companies: D.companies.filter(c => c.kind === 'internal'), partners: D.companies, events: D.events, faq: D.faq });
   const tpl = await env.ASSETS.fetch(new URL('/', url.origin));
   const rw = new HTMLRewriter()
     .on('html', { element: e => e.setAttribute('lang', r.L) })

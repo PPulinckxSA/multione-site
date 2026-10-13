@@ -10,7 +10,7 @@
 
   // ---------- mots des adresses (mots-cles) ----------
   const SEG = {
-    machines: { fr: 'mini-chargeuses', nl: 'minishovels', en: 'mini-loaders' },
+    machines: { fr: 'mini-chargeuses-articulees', nl: 'minishovels', en: 'mini-loaders' },
     acc: { fr: 'accessoires', nl: 'werktuigen', en: 'attachments' },
     histoire: { fr: 'notre-histoire', nl: 'ons-verhaal', en: 'our-story' },
     partenaires: { fr: 'distributeurs', nl: 'verdelers', en: 'dealers' },
@@ -19,9 +19,10 @@
     configurer: { fr: 'configurateur', nl: 'configurator', en: 'configurator' },
     merci: { fr: 'merci', nl: 'bedankt', en: 'thank-you' },
     'vie-privee': { fr: 'vie-privee', nl: 'privacy', en: 'privacy' },
+    faq: { fr: 'questions-frequentes', nl: 'veelgestelde-vragen', en: 'faq' },
   };
   const SERIE_W = { fr: 'serie', nl: 'serie', en: 'series' };
-  const STATIC = ['histoire', 'partenaires', 'contact', 'devenir-distributeur', 'vie-privee'];
+  const STATIC = ['histoire', 'partenaires', 'faq', 'contact', 'devenir-distributeur', 'vie-privee'];
   const NOINDEX = ['configurer', 'merci', 'notfound'];
 
   const slug = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -118,7 +119,7 @@
   // ---------- titres et descriptions ----------
   const TX = {
     fr: { home: ['MultiOne Belgique – mini-chargeuses articulées et accessoires', 'Importateur officiel MultiOne en Belgique : mini-chargeuses articulées compactes et plus de 100 accessoires. Configurez votre machine et recevez une offre d’un distributeur officiel près de chez vous.'],
-      machines: ['Mini-chargeuses articulées MultiOne – toute la gamme', 'Toute la gamme de mini-chargeuses articulées MultiOne, de la Série 1 à la Série 11 : caractéristiques, accessoires compatibles et offre gratuite d’un distributeur officiel en Belgique.'],
+      machines: ['Mini-chargeuses articulées MultiOne – toute la gamme', 'Toute la gamme de mini-chargeuses articulées MultiOne (chargeuses compactes, valets de ferme), de la Série 1 à la Série 11 : caractéristiques, accessoires et offre gratuite d’un distributeur officiel en Belgique.'],
       serie: s => [`MultiOne ${s} – mini-chargeuses articulées`, `Découvrez les mini-chargeuses articulées MultiOne ${s} : modèles, moteurs, capacité de levage et accessoires compatibles. Demandez une offre à un distributeur officiel en Belgique.`],
       machine: (n, sp) => [`${n} – mini-chargeuse articulée, fiche technique`, `${n} : ${sp}. Configurez-la avec ses accessoires et recevez une offre d’un distributeur MultiOne officiel en Belgique.`],
       acc: ['Accessoires MultiOne pour mini-chargeuse – plus de 100 outils', 'Plus de 100 accessoires pour mini-chargeuses MultiOne : godets, fourches, balayeuses, tondeuses, terrassement, espaces verts… avec la compatibilité de chaque machine.'],
@@ -129,11 +130,12 @@
       contact: ['Contact – MultiOne Belgium Import', 'Contactez l’importateur MultiOne en Belgique : demande d’information, de démonstration ou de prix pour une mini-chargeuse articulée et ses accessoires.'],
       'devenir-distributeur': ['Devenir distributeur MultiOne en Belgique', 'Vous êtes concessionnaire en matériel agricole, de parcs et jardins ou de construction ? Rejoignez le réseau de distributeurs officiels MultiOne en Belgique.'],
       'vie-privee': ['Vie privée et cookies – MultiOne Belgium', 'Protection des données personnelles et cookies sur multione.be.'],
+      faq: ['Questions fréquentes – mini-chargeuses MultiOne', 'Les réponses à vos questions sur les mini-chargeuses articulées MultiOne : choix du modèle, accessoires, achat, livraison, entretien et service après-vente en Belgique.'],
       configurer: ['Configurateur MultiOne – composez votre machine', 'Choisissez votre mini-chargeuse MultiOne et ses accessoires, puis recevez une offre d’un distributeur officiel.'],
       merci: ['Merci – MultiOne Belgium', 'Votre demande a bien été envoyée.'], notfound: ['Page introuvable – MultiOne Belgium', 'Cette page n’existe pas ou plus.'],
       home_l: 'Accueil', machine_l: 'Mini-chargeuse articulée', acc_l: 'Accessoire pour mini-chargeuse' },
     nl: { home: ['MultiOne België – minishovels (knikladers) en werktuigen', 'Officiële invoerder van MultiOne in België: compacte minishovels en meer dan 100 werktuigen. Stel uw machine samen en ontvang een offerte van een officiële verdeler in uw buurt.'],
-      machines: ['MultiOne minishovels – het volledige gamma', 'Het volledige gamma MultiOne minishovels, van Serie 1 tot Serie 11: kenmerken, compatibele werktuigen en gratis offerte van een officiële verdeler in België.'],
+      machines: ['MultiOne minishovels – het volledige gamma', 'Het volledige gamma MultiOne minishovels (compacte knikladers), van Serie 1 tot Serie 11: kenmerken, compatibele werktuigen en gratis offerte van een officiële verdeler in België.'],
       serie: s => [`MultiOne ${s} – minishovels`, `Ontdek de MultiOne ${s} minishovels: modellen, motoren, hefvermogen en compatibele werktuigen. Vraag een offerte aan bij een officiële verdeler in België.`],
       machine: (n, sp) => [`${n} – minishovel, technische fiche`, `${n}: ${sp}. Stel hem samen met werktuigen en ontvang een offerte van een officiële MultiOne-verdeler in België.`],
       acc: ['MultiOne werktuigen voor minishovel – meer dan 100 werktuigen', 'Meer dan 100 werktuigen voor MultiOne minishovels: bakken, vorken, veegmachines, maaiers, graafwerk, groenonderhoud… met de compatibiliteit per machine.'],
@@ -144,6 +146,7 @@
       contact: ['Contacteer ons – MultiOne Belgium Import', 'Neem contact op met de MultiOne-invoerder in België: informatie, demonstratie of prijsaanvraag voor een minishovel en werktuigen.'],
       'devenir-distributeur': ['MultiOne-verdeler worden in België', 'Bent u dealer in land- en tuinbouwmachines, groenonderhoud of bouwmachines? Word officiële MultiOne-verdeler in België.'],
       'vie-privee': ['Privacy en cookies – MultiOne Belgium', 'Bescherming van persoonsgegevens en cookies op multione.be.'],
+      faq: ['Veelgestelde vragen – MultiOne minishovels', 'Antwoorden op uw vragen over MultiOne minishovels: keuze van het model, werktuigen, aankoop, levering, onderhoud en service in België.'],
       configurer: ['MultiOne configurator – stel uw machine samen', 'Kies uw MultiOne minishovel en werktuigen en ontvang een offerte van een officiële verdeler.'],
       merci: ['Bedankt – MultiOne Belgium', 'Uw aanvraag is verzonden.'], notfound: ['Pagina niet gevonden – MultiOne Belgium', 'Deze pagina bestaat niet (meer).'],
       home_l: 'Home', machine_l: 'Minishovel', acc_l: 'Werktuig voor minishovel' },
@@ -159,6 +162,7 @@
       contact: ['Contact us – MultiOne Belgium Import', 'Contact the MultiOne importer in Belgium: information, demonstration or price request for an articulated mini loader and attachments.'],
       'devenir-distributeur': ['Become a MultiOne dealer in Belgium', 'Are you an agricultural, grounds-care or construction equipment dealer? Join the official MultiOne dealer network in Belgium.'],
       'vie-privee': ['Privacy and cookies – MultiOne Belgium', 'Personal data protection and cookies on multione.be.'],
+      faq: ['Frequently asked questions – MultiOne mini loaders', 'Answers to your questions about MultiOne articulated mini loaders: choosing a model, attachments, purchase, delivery, servicing and after-sales in Belgium.'],
       configurer: ['MultiOne configurator – build your machine', 'Choose your MultiOne mini loader and attachments, then get a quote from an official dealer.'],
       merci: ['Thank you – MultiOne Belgium', 'Your request has been sent.'], notfound: ['Page not found – MultiOne Belgium', 'This page does not exist (anymore).'],
       home_l: 'Home', machine_l: 'Articulated mini loader', acc_l: 'Mini loader attachment' },
@@ -227,6 +231,8 @@
     if (page === 'home') ld.push({ '@context': 'https://schema.org', '@type': 'WebSite', '@id': ORIGIN + '/#website', name: 'MultiOne Belgium', url: ORIGIN + '/', inLanguage: HREFLANG[L], publisher: org });
     if (page === 'partenaires' || page === 'contact') for (const p of (extra.partners || [])) ld.push({ '@context': 'https://schema.org', ...localBusiness(p, L) });
     if (page === 'home') for (const e of (extra.events || [])) ld.push(eventLd(e, L));
+    if (page === 'faq' && (extra.faq || []).length) ld.push({ '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: HREFLANG[L],
+      mainEntity: extra.faq.map(f => ({ '@type': 'Question', name: faqText(f, 'q', L), acceptedAnswer: { '@type': 'Answer', text: faqText(f, 'a', L) } })) });
     return { L, page, arg, path, canonical: path && !NOINDEX.includes(page) ? ORIGIN + path : null, noindex: NOINDEX.includes(page),
       title, description: desc, h1, image: image || ORIGIN + '/assets/logo.png', alternates, ld: ld.map(clean) };
   }
@@ -243,6 +249,10 @@
       location: { '@type': 'Place', name: e.location || 'Belgium', address: e.location || 'Belgium' }, url: e.url || ORIGIN + href(L, 'home'),
       image: e.has_image ? ORIGIN + '/api/public/events/' + e.id + '/image' : undefined, organizer: { '@id': ORIGIN + '/#org', name: 'MultiOne Belgium Import', url: ORIGIN + '/' } });
   }
+  function faqText(f, k, L) { return f[k + '_' + L] || f[k + '_fr'] || ''; }
+  const FAQ_TOPICS = { general: { fr: 'Généralités', nl: 'Algemeen', en: 'General' }, machines: { fr: 'Choisir sa machine', nl: 'Een machine kiezen', en: 'Choosing a machine' },
+    accessoires: { fr: 'Accessoires', nl: 'Werktuigen', en: 'Attachments' }, achat: { fr: 'Achat, prix et livraison', nl: 'Aankoop, prijs en levering', en: 'Purchase, price and delivery' },
+    sav: { fr: 'Entretien et service après-vente', nl: 'Onderhoud en service', en: 'Servicing and after-sales' } };
   function clean(o) {                               // retire les champs vides (undefined, null, '')
     if (Array.isArray(o)) return o.map(clean);
     if (o && typeof o === 'object') { const r = {}; for (const [k, v] of Object.entries(o)) if (v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)) r[k] = clean(v); return r; }
@@ -256,5 +266,5 @@
     return P;
   }
 
-  G.MOR = { ORIGIN, LANGS, HREFLANG, OGLOC, SEG, slug, shortMachine, serNum, serieLabel, index, href, resolve, fromLegacy, meta, crumbs, allPages, clip, machImg, famImg, TX };
+  G.MOR = { FAQ_TOPICS, faqText, ORIGIN, LANGS, HREFLANG, OGLOC, SEG, slug, shortMachine, serNum, serieLabel, index, href, resolve, fromLegacy, meta, crumbs, allPages, clip, machImg, famImg, TX };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

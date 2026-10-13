@@ -9,7 +9,7 @@ const CFG = JSON.parse(sessionStorage.getItem('mo_cfg') || '{"machine":null,"ite
 const saveCfg = () => sessionStorage.setItem('mo_cfg', JSON.stringify(CFG));
 
 const T = {
-  fr: { nav: [['#/', 'Accueil'], ['#/machines', 'Machines'], ['#/accessoires', 'Accessoires'], ['#/histoire', 'Notre histoire'], ['#/partenaires', 'Partenaires'], ['#/contact', 'Contact']], cta: 'Configurer ma machine',
+  fr: { nav: [['#/', 'Accueil'], ['#/machines', 'Machines'], ['#/accessoires', 'Accessoires'], ['#/histoire', 'Notre histoire'], ['#/partenaires', 'Partenaires'], ['#/faq', 'FAQ'], ['#/contact', 'Contact']], cta: 'Configurer ma machine',
     heroT: n => `Une seule machine, plus de ${n} accessoires`, heroP: 'Les chargeuses articulées MultiOne passent de la pelle à la fourche, de la balayeuse à la fraise à neige en quelques secondes. Composez votre configuration, un partenaire officiel vous répond.',
     f1: 'modèles d’accessoires', f2: 'séries de machines', f3: 'partenaires en Belgique', machines: 'Les machines', machinesP: 'Du modèle compact de la série 1 à la puissante série 11.',
     seeAll: 'Voir toutes les machines', apps: 'Accessoires par métier', appsP: 'Choisissez votre activité pour voir les accessoires adaptés.', allAcc: 'Tous les accessoires',
@@ -26,7 +26,7 @@ const T = {
     choosePartner: 'Choisissez un partenaire pour continuer.', filter: 'Filtrer les accessoires', all: 'Toutes', privacy: 'Vie privée', foot: 'Chargeuses articulées et accessoires MultiOne en Belgique.',
     privT: 'Protection de vos données', privP: 'Les informations que vous saisissez dans le formulaire de demande sont transmises uniquement au partenaire que vous choisissez et à MultiOne Belgium Import, dans le seul but de répondre à votre demande et de vous remettre une offre. Elles ne sont ni vendues ni cédées à des tiers. Vous pouvez demander à tout moment leur consultation, leur correction ou leur suppression en écrivant au partenaire concerné.',
     empty: 'Votre configuration est vide.', acc: '🔒 Accès réservé', evNow: 'En ce moment', evSoon: 'Retrouvez-nous', evBooth: 'Stand', evMore: 'En savoir plus', evAsk: 'Demander une invitation', remove: 'Retirer', phoneL: 'Tél.' },
-  nl: { nav: [['#/', 'Home'], ['#/machines', 'Machines'], ['#/accessoires', 'Werktuigen'], ['#/histoire', 'Ons verhaal'], ['#/partenaires', 'Partners'], ['#/contact', 'Contact']], cta: 'Mijn machine samenstellen',
+  nl: { nav: [['#/', 'Home'], ['#/machines', 'Machines'], ['#/accessoires', 'Werktuigen'], ['#/histoire', 'Ons verhaal'], ['#/partenaires', 'Partners'], ['#/faq', 'FAQ'], ['#/contact', 'Contact']], cta: 'Mijn machine samenstellen',
     heroT: n => `Eén machine, meer dan ${n} werktuigen`, heroP: 'Met een MultiOne knikladder wissel je in enkele seconden van bak naar vork, van veegmachine naar sneeuwblazer. Stel je configuratie samen, een officiële partner antwoordt je.',
     f1: 'werktuigmodellen', f2: 'machineseries', f3: 'partners in België', machines: 'De machines', machinesP: 'Van het compacte model uit serie 1 tot de krachtige serie 11.',
     seeAll: 'Alle machines bekijken', apps: 'Werktuigen per vak', appsP: 'Kies je activiteit om de geschikte werktuigen te zien.', allAcc: 'Alle werktuigen',
@@ -43,7 +43,7 @@ const T = {
     choosePartner: 'Kies een partner om verder te gaan.', filter: 'Werktuigen filteren', all: 'Alle', privacy: 'Privacy', foot: 'MultiOne knikladers en werktuigen in België.',
     privT: 'Bescherming van je gegevens', privP: 'De gegevens die je in het aanvraagformulier invult, worden enkel doorgegeven aan de partner die je kiest en aan MultiOne Belgium Import, met als enig doel je aanvraag te beantwoorden en je een offerte te bezorgen. Ze worden niet verkocht of aan derden doorgegeven. Je kunt op elk moment inzage, verbetering of verwijdering vragen door de betrokken partner te contacteren.',
     empty: 'Je configuratie is leeg.', acc: '🔒 Partnertoegang', evNow: 'Nu bezig', evSoon: 'Kom ons bezoeken', evBooth: 'Stand', evMore: 'Meer info', evAsk: 'Een uitnodiging vragen', remove: 'Verwijderen', phoneL: 'Tel.' },
-  en: { nav: [['#/', 'Home'], ['#/machines', 'Machines'], ['#/accessoires', 'Attachments'], ['#/histoire', 'Our story'], ['#/partenaires', 'Partners'], ['#/contact', 'Contact']], cta: 'Configure my machine',
+  en: { nav: [['#/', 'Home'], ['#/machines', 'Machines'], ['#/accessoires', 'Attachments'], ['#/histoire', 'Our story'], ['#/partenaires', 'Partners'], ['#/faq', 'FAQ'], ['#/contact', 'Contact']], cta: 'Configure my machine',
     heroT: n => `One machine, more than ${n} attachments`, heroP: 'MultiOne articulated loaders switch from bucket to fork, from sweeper to snow blower in seconds. Build your configuration and an official partner will get back to you.',
     f1: 'attachment models', f2: 'machine series', f3: 'partners in Belgium', machines: 'The machines', machinesP: 'From the compact 1 series to the powerful 11 series.',
     seeAll: 'See all machines', apps: 'Attachments by trade', appsP: 'Pick your activity to see the right attachments.', allAcc: 'All attachments',
@@ -64,9 +64,9 @@ const t = () => T[L];
 
 // ---------- donnees ----------
 async function load() {
-  const [cat, pt, c, m, i, ev, ov] = await Promise.all(['/api/public/catalog', '/api/public/partners', '/assets/annex/catalog.json', '/assets/annex/machines.json', '/assets/annex/items.json', '/api/public/events', '/seo-overrides.json']
+  const [cat, pt, c, m, i, ev, ov, fq] = await Promise.all(['/api/public/catalog', '/api/public/partners', '/assets/annex/catalog.json', '/assets/annex/machines.json', '/assets/annex/items.json', '/api/public/events', '/seo-overrides.json', '/api/public/faq']
     .map(u => fetch(u).then(r => r.json()).catch(() => ({ events: [] }))));
-  D = { ...cat, partners: pt.partners, events: ev.events || [], cat: c, mach: m, items: i, ov: ov || {}, by: Object.fromEntries(cat.products.map(p => [p.code, p])) };
+  D = { ...cat, partners: pt.partners, events: ev.events || [], cat: c, mach: m, items: i, ov: ov || {}, faq: fq?.faq || [], by: Object.fromEntries(cat.products.map(p => [p.code, p])) };
   D.I = MOR.index({ products: cat.products, cat: c, mach: m });
 }
 const desc = p => p?.['desc_' + L] || p?.desc_fr || p?.desc_en || '';
@@ -126,7 +126,9 @@ function LH(h) { const g = MOR.fromLegacy(h); return D ? MOR.href(L, g.page, g.a
 function fixLinks() { if (!D) return; document.querySelectorAll('a[href^="#/"]').forEach(a => a.setAttribute('href', LH(a.getAttribute('href')))); }
 function go(path) { if (path !== location.pathname + location.search) history.pushState(null, '', path); route(); }
 function setMeta(r) {
-  const m = MOR.meta(r.L || L, r.page, r.arg, D.I, { overrides: D.ov });
+  const m = MOR.meta(r.L || L, r.page, r.arg, D.I, { overrides: D.ov, companies: (D.partners || []).filter(c => c.kind === 'internal'), partners: D.partners, events: D.events, faq: D.faq });
+  document.head.querySelectorAll('script[type="application/ld+json"]').forEach(e => e.remove());
+  for (const o of m.ld) { const e = document.createElement('script'); e.type = 'application/ld+json'; e.textContent = JSON.stringify(o); document.head.appendChild(e); }
   document.title = m.title;
   const set = (sel, attr, val, make) => { let e = document.head.querySelector(sel); if (!e && val) { e = document.createElement(make[0]); for (const [k, v] of Object.entries(make[1])) e.setAttribute(k, v); document.head.appendChild(e); } if (e) val ? e.setAttribute(attr, val) : e.remove(); };
   set('meta[name="description"]', 'content', m.description, ['meta', { name: 'description' }]);
@@ -180,6 +182,7 @@ function route() {
   if (a === 'famille') return v.innerHTML = pageFamily(b), wire();
   if (a === 'partenaires') return v.innerHTML = pagePartners(), wire();
   if (a === 'histoire') return v.innerHTML = pageStory(), wire();
+  if (a === 'faq') return v.innerHTML = pageFaq(), wire();
   if (a === 'contact') return v.innerHTML = pageContact();
   if (a === 'devenir-distributeur') return v.innerHTML = pagePartnerApply();
   if (a === 'configurer') return pageConfig(b);
@@ -198,6 +201,18 @@ function wire() {
 }
 
 // ---------- pages ----------
+function pageFaq() {
+  const X = { fr: ['Questions fréquentes', 'Les réponses aux questions que l’on nous pose le plus souvent.', 'Votre question n’y est pas ?', 'Contactez-nous', 'Les questions seront bientôt publiées.'],
+    nl: ['Veelgestelde vragen', 'Antwoorden op de vragen die ons het vaakst gesteld worden.', 'Staat uw vraag er niet bij?', 'Neem contact op', 'De vragen worden binnenkort gepubliceerd.'],
+    en: ['Frequently asked questions', 'Answers to the questions we are asked most often.', 'Can’t find your question?', 'Contact us', 'Questions will be published soon.'] }[L];
+  const link = s => esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+  const groups = Object.keys(MOR.FAQ_TOPICS).map(t => [t, D.faq.filter(f => f.topic === t)]).filter(([, q]) => q.length);
+  return `<section><div class="wrap"><h1 class="h2" style="margin-bottom:8px">${X[0]}</h1><p style="color:var(--muted);margin:0 0 26px">${X[1]}</p>
+    ${groups.length ? groups.map(([t, qs]) => `<h2 class="faqt">${esc(MOR.FAQ_TOPICS[t][L])}</h2><div class="faq">${qs.map(f => `<details><summary>${esc(MOR.faqText(f, 'q', L))}</summary><div>${link(MOR.faqText(f, 'a', L))}</div></details>`).join('')}</div>`).join('')
+      : `<p>${X[4]}</p>`}
+    <p style="margin-top:34px"><b>${X[2]}</b> <a class="cta small" href="#/contact" style="margin-left:10px">${X[3]}</a></p></div></section>`;
+}
+
 function serieCard(s) {
   const ms = machines().filter(p => p.series_tab === s);
   return `<a class="ser" href="#/serie/${encodeURIComponent(s)}"><span class="num">${esc(serNum(s))}</span><img src="${mImg(ms[0].code)}" alt="MultiOne ${esc(SER(s))}" loading="lazy">
