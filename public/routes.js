@@ -25,8 +25,10 @@
   const STATIC = ['histoire', 'partenaires', 'faq', 'contact', 'devenir-distributeur', 'vie-privee'];
   const NOINDEX = ['configurer', 'merci', 'notfound'];
 
-  const slug = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[’'`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // adresse sans accents ni caracteres speciaux : « Adaptateurs d’accessoires » -> adaptateurs-d-accessoires, « Cœur » -> coeur
+  const LIG = { 'œ': 'oe', 'æ': 'ae', 'ß': 'ss', 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ı': 'i' };
+  const slug = s => String(s || '').toLowerCase().replace(/[œæßøłđðþı]/g, c => LIG[c]).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
   function shortMachine(d) {
     let n = String(d || '').replace(/^MultiOne\s+/i, '').trim(); const sub = [];
