@@ -28,9 +28,10 @@ async function catalog(env) {
 }
 
 async function partners(env) {
-  return (await env.DB.prepare(`SELECT id, kind, IFNULL(public_name, name) AS name, public_region AS region, public_postcodes AS postcodes,
-      IFNULL(public_phone, phone) AS phone, street, city, public_description AS description, logo_key IS NOT NULL AS has_logo
-      FROM companies WHERE public_visible = 1 ORDER BY CASE kind WHEN 'internal' THEN 0 ELSE 1 END, name`).all()).results;
+  const q = (extra) => env.DB.prepare(`SELECT id, kind, IFNULL(public_name, name) AS name, public_region AS region, public_postcodes AS postcodes,
+      IFNULL(public_phone, phone) AS phone, street, city, public_description AS description, logo_key IS NOT NULL AS has_logo${extra}
+      FROM companies WHERE public_visible = 1 ORDER BY CASE kind WHEN 'internal' THEN 0 ELSE 1 END, name`).all();
+  try { return (await q(', public_website AS website')).results; } catch (e) { return (await q('')).results; }   // colonne ajoutee par la migration 0041
 }
 
 async function notify(env, lead, company, items, machine) {
@@ -72,6 +73,10 @@ export async function onRequest({ request: req, env }) {
       const r = await env.DB.prepare(`SELECT image_key, image_type FROM events WHERE id=? AND end_date >= date('now')`).bind(evi[1]).first();
       const o = r?.image_key ? await env.FILES.get(r.image_key) : null;
       return o ? new Response(o.body, { headers: { 'content-type': r.image_type || 'image/jpeg', 'cache-control': 'public, max-age=600' } }) : new Response('', { status: 404 });
+    }
+    if (path === '/api/public/faq' && method === 'GET') {          // questions frequentes publiees (gerees dans le portail)
+      let faq = []; try { faq = (await env.DB.prepare(`SELECT id, topic, q_fr, q_nl, q_en, a_fr, a_nl, a_en FROM faq WHERE published = 1 ORDER BY topic_order, sort_order, created_at`).all()).results; } catch (e) {}
+      return json({ faq }, 200, { 'cache-control': 'no-cache' });
     }
     if (path === '/api/public/partners' && method === 'GET') return json({ partners: await partners(env) }, 200, { 'cache-control': 'no-cache' });
     const im = path.match(/^\/api\/public\/image\/([A-Z0-9.]+)$/);
