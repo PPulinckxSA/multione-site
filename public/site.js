@@ -15,7 +15,7 @@ const T = {
     seeAll: 'Voir toutes les machines', apps: 'Accessoires par métier', appsP: 'Choisissez votre activité pour voir les accessoires adaptés.', allAcc: 'Tous les accessoires',
     partners: 'Nos partenaires', partnersP: 'Des équipes proches de chez vous pour la démonstration, la vente et le service.', official: 'Partenaire officiel', importer: 'Importateur MultiOne',
     serie: 'Série', models: n => `${n} modèle${n > 1 ? 's' : ''}`, famAcc: n => `${n} famille${n > 1 ? 's' : ''} d’accessoires`, specs: 'Caractéristiques', std: 'Équipements de série',
-    dims: 'Dimensions', chart: 'Tableau de charge', opts: 'Options disponibles', compatAcc: 'Accessoires compatibles', addMachine: 'Configurer cette machine', inCfg: '✓ Dans ma configuration',
+    dims: 'Dimensions', chart: 'Tableau de charge', opts: 'Options disponibles', compatAcc: 'Accessoires compatibles', vmL: 'Votre machine', vmAll: 'Toutes les machines', vmHint: 'Choisissez votre machine pour ne voir que les accessoires compatibles.', vmN: (n, m) => `${n} type${n > 1 ? 's' : ''} d’accessoires compatibles avec la ${m}`, vmCfg: 'Configurer cette machine', addMachine: 'Configurer cette machine', inCfg: '✓ Dans ma configuration',
     add: '+ Ajouter', added: '✓ Ajouté', very: 'Très compatible', ok: 'Compatible, à valider selon l’usage', no: 'Non compatible avec votre machine', unk: 'Compatibilité à confirmer',
     steps: ['Machine', 'Options', 'Accessoires', 'Partenaire', 'Demande'], next: 'Continuer', prev: 'Retour', myCfg: 'Ma configuration', noMachine: 'Aucune machine choisie',
     chooseSerie: 'Choisissez une série, puis un modèle.', noOpts: 'Aucune option pour cette machine.', optsP: 'Cochez les options qui vous intéressent.', accP: 'Seuls les accessoires compatibles avec votre machine sont proposés.',
@@ -32,7 +32,7 @@ const T = {
     seeAll: 'Alle machines bekijken', apps: 'Werktuigen per vak', appsP: 'Kies je activiteit om de geschikte werktuigen te zien.', allAcc: 'Alle werktuigen',
     partners: 'Onze partners', partnersP: 'Teams dicht bij jou voor demonstratie, verkoop en service.', official: 'Officiële partner', importer: 'MultiOne-invoerder',
     serie: 'Serie', models: n => `${n} model${n > 1 ? 'len' : ''}`, famAcc: n => `${n} werktuigfamilie${n > 1 ? 's' : ''}`, specs: 'Kenmerken', std: 'Standaarduitrusting',
-    dims: 'Afmetingen', chart: 'Lastentabel', opts: 'Beschikbare opties', compatAcc: 'Compatibele werktuigen', addMachine: 'Deze machine samenstellen', inCfg: '✓ In mijn configuratie',
+    dims: 'Afmetingen', chart: 'Lastentabel', opts: 'Beschikbare opties', compatAcc: 'Compatibele werktuigen', vmL: 'Uw machine', vmAll: 'Alle machines', vmHint: 'Kies uw machine om enkel de compatibele werktuigen te zien.', vmN: (n, m) => `${n} soort${n > 1 ? 'en' : ''} werktuigen compatibel met de ${m}`, vmCfg: 'Deze machine samenstellen', addMachine: 'Deze machine samenstellen', inCfg: '✓ In mijn configuratie',
     add: '+ Toevoegen', added: '✓ Toegevoegd', very: 'Zeer compatibel', ok: 'Compatibel, te bevestigen volgens gebruik', no: 'Niet compatibel met je machine', unk: 'Compatibiliteit te bevestigen',
     steps: ['Machine', 'Opties', 'Werktuigen', 'Partner', 'Aanvraag'], next: 'Verder', prev: 'Terug', myCfg: 'Mijn configuratie', noMachine: 'Geen machine gekozen',
     chooseSerie: 'Kies een serie en daarna een model.', noOpts: 'Geen opties voor deze machine.', optsP: 'Vink de opties aan die je interesseren.', accP: 'Enkel de werktuigen die compatibel zijn met je machine worden getoond.',
@@ -49,7 +49,7 @@ const T = {
     seeAll: 'See all machines', apps: 'Attachments by trade', appsP: 'Pick your activity to see the right attachments.', allAcc: 'All attachments',
     partners: 'Our partners', partnersP: 'Local teams for demonstrations, sales and service.', official: 'Official partner', importer: 'MultiOne importer',
     serie: 'Series', models: n => `${n} model${n > 1 ? 's' : ''}`, famAcc: n => `${n} attachment famil${n > 1 ? 'ies' : 'y'}`, specs: 'Specifications', std: 'Standard equipment',
-    dims: 'Dimensions', chart: 'Load chart', opts: 'Available options', compatAcc: 'Compatible attachments', addMachine: 'Configure this machine', inCfg: '✓ In my configuration',
+    dims: 'Dimensions', chart: 'Load chart', opts: 'Available options', compatAcc: 'Compatible attachments', vmL: 'Your machine', vmAll: 'All machines', vmHint: 'Choose your machine to see only compatible attachments.', vmN: (n, m) => `${n} type${n > 1 ? 's' : ''} of attachments compatible with the ${m}`, vmCfg: 'Configure this machine', addMachine: 'Configure this machine', inCfg: '✓ In my configuration',
     add: '+ Add', added: '✓ Added', very: 'Very compatible', ok: 'Compatible, to be confirmed for your use', no: 'Not compatible with your machine', unk: 'Compatibility to be confirmed',
     steps: ['Machine', 'Options', 'Attachments', 'Partner', 'Request'], next: 'Continue', prev: 'Back', myCfg: 'My configuration', noMachine: 'No machine selected',
     chooseSerie: 'Pick a series, then a model.', noOpts: 'No options for this machine.', optsP: 'Tick the options you are interested in.', accP: 'Only attachments compatible with your machine are shown.',
@@ -89,6 +89,16 @@ const famName = f => f[L] || f.fr;
 const catName = c => c[L] || c.fr;
 const level = (acc, mcode) => { const m = D.by[mcode]; return m ? (D.compat[acc]?.[m.compat_key] || null) : undefined; };
 const famLevel = (f, mcode) => { if (!mcode) return undefined; const l = f.codes.filter(c => D.by[c]).map(c => level(c, mcode)); return l.includes('very') ? 'very' : l.includes('ok') ? 'ok' : l.length && l.every(x => x === 'no') ? 'no' : null; };
+const viewMachine = () => { let v = ''; try { v = sessionStorage.getItem('mo_vm') || ''; } catch (e) {} return v === '-' ? null : (v && D.by[v] ? v : CFG.machine); };
+function machineBar(m, n) {
+  const ms = D.products.filter(p => p.family === 'machine'), sers = [...new Set(ms.map(p => p.series_tab))].sort((a, b) => (parseInt(a) || 99) - (parseInt(b) || 99));
+  const name = c => 'MultiOne ' + MOR.shortMachine(D.by[c]?.desc_en).main;
+  return `<div class="vmbar"><label for="vmSel"><b>${t().vmL}</b></label>
+    <select id="vmSel"><option value="-">${t().vmAll}</option>${sers.map(s => `<optgroup label="${esc(MOR.serieLabel(s, L))}">${ms.filter(p => p.series_tab === s)
+      .map(p => `<option value="${p.code}" ${p.code === m ? 'selected' : ''}>${esc(name(p.code))}</option>`).join('')}</optgroup>`).join('')}</select>
+    <span class="vmtxt">${m ? esc(t().vmN(n, name(m))) + ` · <a href="#/machine/${m}">${t().vmCfg}</a>` : esc(t().vmHint)}</span></div>`;
+}
+document.addEventListener('change', e => { if (e.target && e.target.id === 'vmSel') { try { sessionStorage.setItem('mo_vm', e.target.value); } catch (x) {} route(); } });
 const famsVisible = () => D.cat.families.map(f => ({ ...f, codes: f.codes.filter(c => D.by[c]) })).filter(f => f.codes.length);
 const lvl = l => l === 'very' ? `<span class="lvl very">● ${t().very}</span>` : l === 'ok' ? `<span class="lvl ok">● ${t().ok}</span>` : l === null ? `<span class="lvl">○ ${t().unk}</span>` : '';
 
@@ -279,20 +289,23 @@ function famCard(f, l) {
 }
 function pageAcc(catId) {
   const cats = D.cat.categories.map(c => ({ ...c, fams: famsVisible().filter(f => f.cat === c.id) })).filter(c => c.fams.length);
-  const m = CFG.machine;
+  const m = viewMachine();
   const show = catId ? cats.filter(c => c.id === catId) : cats;
+  const nOk = m ? show.reduce((a, c) => a + c.fams.filter(f => famLevel(f, m) !== 'no').length, 0) : 0;
   return `<section style="padding-top:0"><div class="wrap"><div class="crumb"><a href="#/accessoires">${t().allAcc}</a>${catId ? ' › ' + esc(catName(cats.find(c => c.id === catId) || {})) : ''}</div>
     <h1 class="h2" style="margin-bottom:16px">${catId ? esc(catName(cats.find(c => c.id === catId) || {})) : t().allAcc}</h1>
+    ${machineBar(m, nOk)}
     <div class="tabs">${[`<a class="btn2" style="padding:5px 12px;border-width:1px" href="#/accessoires">${t().all}</a>`, ...cats.map(c => `<a class="btn2" style="padding:5px 12px;border-width:1px;${c.id === catId ? 'background:var(--night);color:#fff;border-color:var(--night)' : ''}" href="#/accessoires/${c.id}">${esc(catName(c))}</a>`)].join('')}</div>
-    ${show.map(c => { const g = c.fams.map(f => ({ f, l: famLevel(f, m) })).filter(x => !m || x.l !== 'no'); return g.length ? `<h3 style="margin:24px 0 10px">${esc(catName(c))}</h3><div class="grid3">${g.map(({ f, l }) => famCard(f, l)).join('')}</div>` : ''; }).join('')}
+    ${show.map(c => { const R = { very: 0, ok: 1 }, g = c.fams.map(f => ({ f, l: famLevel(f, m) })).filter(x => !m || x.l !== 'no').sort((a, b) => m ? (R[a.l] ?? 2) - (R[b.l] ?? 2) : 0); return g.length ? `<h3 style="margin:24px 0 10px">${esc(catName(c))}</h3><div class="grid3">${g.map(({ f, l }) => famCard(f, l)).join('')}</div>` : ''; }).join('')}
   </div></section>`;
 }
 function pageFamily(id) {
   const f = famsVisible().find(x => x.id === id); if (!f) return pageAcc();
-  const c = D.cat.categories.find(x => x.id === f.cat), m = CFG.machine, feats = f.features?.[L] || [];
+  const c = D.cat.categories.find(x => x.id === f.cat), m = viewMachine(), feats = f.features?.[L] || [];
   return `<section style="padding-top:0"><div class="wrap"><div class="crumb"><a href="#/accessoires">${t().allAcc}</a> › <a href="#/accessoires/${c.id}">${esc(catName(c))}</a> › ${esc(famName(f))}</div>
     <div class="mtop"><div class="big" style="padding:0;overflow:hidden"><img src="${famImg(f)}" alt="MultiOne ${esc(famName(f))}" style="max-height:440px;object-fit:cover"></div>
       <div><h1 style="font-size:clamp(38px,5vw,60px)">${esc(famName(f))}</h1>${feats.length ? `<ul style="padding-left:20px;margin-top:16px">${feats.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div></div>
+    ${machineBar(m, m ? f.codes.filter(x => level(x, m) !== 'no').length : 0).replace(/<span class="vmtxt">[^]*?<\/span><\/div>$/, `<span class="vmtxt">${m ? '' : esc(t().vmHint)}</span></div>`)}
     <div class="models">${f.codes.map(code => { const p = D.by[code], l = m ? level(code, m) : undefined, on = CFG.items.includes(code), tech = D.items[code]?.tech || [];
       return `<div class="mrow" style="${l === 'no' ? 'opacity:.45' : ''}"><div><b>${esc(desc(p))}</b>${tech.length ? `<div class="chips">${tech.map(x => `<span>${esc(x.label[L] || x.label.fr)} ${esc(x.value)}</span>`).join('')}</div>` : ''}
         ${l === 'no' ? `<span class="lvl" style="color:var(--bad)">${t().no}</span>` : lvl(l)}</div>
